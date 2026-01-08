@@ -3,7 +3,7 @@ Type: Package
 Title: Statistical Functions for the
         Maxwell-Boltzmann-Bose-Einstein-Fermi-Dirac (MBBEFD) Family of
         Distributions
-Version: 0.0.5
+Version: 0.1.0
 Authors@R: person(given="Avraham", family="Adler",role=c("aut", "cre", "cph"),
     email="Avraham.Adler@gmail.com", comment = c(ORCID = "0000-0002-3039-0703"))
 Description: Provides probability mass, distribution, quantile, random variate
@@ -19,8 +19,9 @@ BugReports: https://github.com/aadler/MBBEFDLite/issues
 ByteCompile: yes
 NeedsCompilation: yes
 UseLTO: yes
-Packaged: 2025-01-31 15:44:29 UTC; Parents
-Author: Avraham Adler [aut, cre, cph] (<https://orcid.org/0000-0002-3039-0703>)
+Packaged: 2026-01-08 16:40:23 UTC; Parents
+Author: Avraham Adler [aut, cre, cph] (ORCID:
+    <https://orcid.org/0000-0002-3039-0703>)
 Maintainer: Avraham Adler <Avraham.Adler@gmail.com>
 Repository: CRAN
-Date/Publication: 2025-01-31 16:00:05 UTC
+Date/Publication: 2026-01-08 20:40:03 UTC
