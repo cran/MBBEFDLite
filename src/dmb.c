@@ -4,7 +4,7 @@
 #include <Rmath.h>
 #include "MBBEFDLite.h"
 
-extern SEXP dmb_c(SEXP x, SEXP g, SEXP b, SEXP give_log) {
+SEXP dmb_c(SEXP x, SEXP g, SEXP b, SEXP give_log) {
   const R_xlen_t n = xlength(x);
   const R_xlen_t gg = xlength(g);
   const R_xlen_t bb = xlength(b);
@@ -15,32 +15,66 @@ extern SEXP dmb_c(SEXP x, SEXP g, SEXP b, SEXP give_log) {
 
   SEXP ret = PROTECT(allocVector(REALSXP, n));
   double *pret = REAL(ret);
-  Memzero(pret, n);
+
+  R_xlen_t ig = 0;
+  R_xlen_t ib = 0;
 
   for (R_xlen_t i = 0; i < n; ++i) {
-    double gi = pg[i % gg];
-    double bi = pb[i % bb];
-    double gm1 = gi - 1.0;
-    double gb = gi * bi;
+    double gi = pg[ig];
+    double bi = pb[ib];
+    if (++ig == gg) ig = 0;
+    if (++ib == bb) ib = 0;
+
     if (ISNA(px[i]) || ISNA(gi) || ISNA(bi)) {
       pret[i] = NA_REAL;
-    } else if (gi < 1.0 || bi < 0.0 || ISNAN(px[i] + gi + bi)) {
-      pret[i] = R_NaN;
-    } else if (gi == 1.0 || bi == 0.0 || px[i] < 0.0 || px[i] >= 1.0) {
-      pret[i] = 0.0;
-    } else if (bi == 1.0) {
-      pret[i] = gm1 / R_pow_di(gm1 * px[i] + 1.0, 2);
-    } else if (gb == 1.0) {
-      pret[i] = -log(bi) * R_pow(bi, px[i]);
-    } else {
-      double gm1b1x = gm1 * R_pow(bi, 1 - px[i]);
-      pret[i] = (bi - 1.0) * gm1b1x * log(bi) /
-        R_pow_di(gm1b1x + (1.0 - gb), 2);
+      continue;
     }
 
-    pret[i] = gl ? log(pret[i]) : pret[i];
+    if (gi < 1.0 || bi < 0.0 || !R_FINITE(px[i]) || !R_FINITE(gi) ||
+             !R_FINITE(bi)) {
+      pret[i] = R_NaN;
+      continue;
+    }
+
+    if (gi == 1.0 || bi == 0.0 || px[i] < 0.0 || px[i] >= 1.0) {
+      pret[i] = 0.0;
+      continue;
+    }
+
+    double gm1 = gi - 1.0;
+
+    if (bi == 1.0) {
+      double gm1px = gm1 * px[i] + 1.0;
+      pret[i] = gm1 / (gm1px * gm1px);
+      continue;
+    }
+
+    double gb = gi * bi;
+    double lb = log(bi);
+    double bix = exp(px[i] * lb);
+
+    if (gb == 1.0) {
+      pret[i] = -lb * bix;
+    } else {
+      double gm1b1x = gm1 * bi / bix;
+      double gm1b1x1mgb = gm1b1x + (1.0 - gb);
+      pret[i] = (bi - 1.0) * gm1b1x * lb / (gm1b1x1mgb * gm1b1x1mgb);
+    }
   }
 
-    UNPROTECT(1);
-    return(ret);
+  if (gl) {
+    for (R_xlen_t i = 0; i < n; ++i) {
+      if (pret[i] > 0.0) {
+        // log positive values
+        pret[i] = log(pret[i]);
+      } else if (pret[i] == 0.0) {
+        // convert 0 to NegInf
+        pret[i] = R_NegInf;
+      }
+        // Allow NA and NaN to flow through
+    }
+  }
+
+  UNPROTECT(1);
+  return(ret);
 }
